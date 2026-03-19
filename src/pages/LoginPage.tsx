@@ -148,16 +148,16 @@ const LoginPage: React.FC = () => {
             </Button>
           </form>
         ) : (
-          <div className="relative w-full h-[300px] flex flex-col items-center justify-center overflow-hidden rounded-xl border border-primary/20 bg-black/80">
+          <div className="relative w-full h-[300px] flex flex-col items-center justify-center overflow-hidden rounded-xl border border-[#00FF41]/20 bg-black/80">
             {/* Background Flash at 1.4s */}
-            <div className="absolute inset-0 bg-primary animate-[flash_2s_ease-out_1.4s_forwards] opacity-0 mix-blend-overlay pointer-events-none z-20" />
+            <div className="absolute inset-0 bg-[#00FF41] animate-[flash_2s_ease-out_1.4s_forwards] opacity-0 mix-blend-overlay pointer-events-none z-20" />
             
             <div className="flex flex-col items-center w-full px-8 relative z-10 h-full">
               
               {/* Stage 1: Decryption (opacity fades out after 0.8s) */}
               <div className="absolute inset-0 flex flex-col items-center justify-center animate-[fadeOut_0.1s_ease-in_0.8s_forwards]">
-                <Terminal className="w-12 h-12 text-primary/70 animate-pulse mb-4" />
-                <div className="w-full h-24 overflow-hidden relative opacity-50 font-mono-display text-xs text-primary blur-[0.5px]">
+                <Terminal className="w-12 h-12 text-[#00FF41]/70 animate-pulse mb-4" />
+                <div className="w-full h-24 overflow-hidden relative opacity-50 font-mono-display text-xs text-[#00FF41] blur-[0.5px]">
                   <div className="absolute top-0 w-full animate-[scrollUp_0.5s_linear_infinite] text-center opacity-70">
                     {/* CSS Hack string for scrolling hex effect */}
                     {Array.from({length: 20}).map((_, i) => (
@@ -165,30 +165,30 @@ const LoginPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <h3 className="mt-4 font-mono-display text-primary tracking-[0.3em] text-sm animate-pulse">DECRYPTING KEY...</h3>
+                <h3 className="mt-4 font-mono-display text-[#00FF41] tracking-[0.3em] text-sm animate-pulse">DECRYPTING KEY...</h3>
               </div>
 
               {/* Stage 2: Firewall Bypass (fades in at 0.8s, out at 1.4s) */}
               <div className="absolute inset-0 flex flex-col items-center justify-center animate-[sequence_0.6s_ease-in-out_0.8s_forwards] opacity-0">
-                <Shield className="w-16 h-16 text-secondary animate-ping mb-4" />
-                <h3 className="font-mono-display text-secondary tracking-[0.2em] text-sm">OVERRIDING FIREWALL</h3>
-                <div className="w-full h-1 bg-secondary/20 mt-4 rounded overflow-hidden">
-                  <div className="h-full bg-secondary animate-[fill-bar_0.6s_ease-out_0.8s_forwards]" style={{width: '0%'}}></div>
+                <Shield className="w-16 h-16 text-[#00FF41] animate-ping mb-4" />
+                <h3 className="font-mono-display text-[#00FF41] tracking-[0.2em] text-sm">OVERRIDING FIREWALL</h3>
+                <div className="w-full h-1 bg-[#00FF41]/20 mt-4 rounded overflow-hidden">
+                  <div className="h-full bg-[#00FF41] animate-[fill-bar_0.6s_ease-out_0.8s_forwards]" style={{width: '0%'}}></div>
                 </div>
               </div>
 
               {/* Stage 3: Access Granted (slams in at 1.4s) */}
               <div className="absolute inset-0 flex flex-col items-center justify-center animate-[slamIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)_1.4s_forwards] opacity-0 scale-150">
                 <div className="relative">
-                   <Unlock className="w-20 h-20 text-primary drop-shadow-[0_0_15px_rgba(var(--primary),1)] mb-6" />
-                   <div className="absolute inset-0 border-4 border-primary rounded-full animate-ping opacity-0 [animation-delay:1.4s]" />
+                   <Unlock className="w-20 h-20 text-[#00FF41] drop-shadow-[0_0_15px_rgba(0,255,65,1)] mb-6" />
+                   <div className="absolute inset-0 border-4 border-[#00FF41] rounded-full animate-ping opacity-0 [animation-delay:1.4s]" />
                 </div>
-                <h2 className="text-3xl font-mono-display text-primary tracking-[0.3em] drop-shadow-[0_0_10px_rgba(var(--primary),0.8)] text-center font-bold">
+                <h2 className="text-3xl font-mono-display text-[#00FF41] tracking-[0.3em] drop-shadow-[0_0_10px_rgba(0,255,65,0.8)] text-center font-bold">
                   ACCESS
                   <br />
                   GRANTED
                 </h2>
-                <p className="mt-4 text-xs font-mono-display text-primary/70 tracking-[0.4em] uppercase">
+                <p className="mt-4 text-xs font-mono-display text-[#00FF41]/70 tracking-[0.4em] uppercase">
                   Welcome, {teamName}
                 </p>
               </div>
