@@ -147,8 +147,8 @@ const AdminDashboard: React.FC = () => {
     const anyLocked = pushedMissions.some(m => m.is_locked);
     const newState = !anyLocked;
 
-    if (newState && !window.confirm('CRITICAL: Pause all mission selection nodes? Teams will not be able to claim new missions.')) return;
-    if (!newState && !window.confirm('Resume mission selection nodes?')) return;
+    if (newState && !window.confirm('CRITICAL: Freeze all mission selection nodes? Teams will not be able to claim new missions.')) return;
+    if (!newState && !window.confirm('Restore mission selection nodes?')) return;
 
     const { error } = await supabase
       .from('problem_statements')
@@ -156,9 +156,9 @@ const AdminDashboard: React.FC = () => {
       .eq('is_pushed', true);
 
     if (error) {
-      toast.error('Failed to update lock status');
+      toast.error('Failed to update system state');
     } else {
-      toast.success(newState ? 'Missions FROZEN' : 'Missions RESUMED');
+      toast.success(newState ? 'DATA STREAM FROZEN' : 'DATA STREAM RESTORED');
     }
   };
 
@@ -240,7 +240,7 @@ const AdminDashboard: React.FC = () => {
                 onClick={handlePushAll}
                 className="font-mono-display text-xs px-6 py-4 h-auto border-primary/50 text-primary hover:bg-primary hover:text-black transition-all duration-300 shadow-[0_0_15px_rgba(var(--primary),0.1)] hover:shadow-[0_0_25px_rgba(var(--primary),0.3)] uppercase tracking-[0.2em]"
               >
-                INITIALIZE MISSION DATA
+                BROADCAST MISSIONS
               </Button>
             ) : (
               <Button
@@ -252,9 +252,9 @@ const AdminDashboard: React.FC = () => {
                   }`}
               >
                 {missions.some(m => m.is_pushed && m.is_locked) ? (
-                  <><Play className="w-3 h-3 mr-2" /> RESUME MISSION DATA</>
+                  <><Play className="w-3 h-3 mr-2" /> RESTORE STREAM</>
                 ) : (
-                  <><Pause className="w-3 h-3 mr-2" /> PAUSE MISSION DATA</>
+                  <><Pause className="w-3 h-3 mr-2" /> FREEZE DATA STREAM</>
                 )}
               </Button>
             )}
@@ -273,15 +273,15 @@ const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {missions.map(m => (
             <div key={m.id} className={`p-4 rounded-lg border text-center relative group transition-all duration-300 ${m.is_pushed
-              ? m.is_locked
+              ? (m.is_locked || m.current_slots >= 4)
                 ? 'border-destructive/30 bg-destructive/5 opacity-80'
                 : 'border-primary/40 bg-primary/5 shadow-[0_0_15px_rgba(var(--primary),0.05)]'
               : 'border-primary/10 bg-transparent opacity-40'
               }`}>
               <div className="text-xs font-mono-display text-muted-foreground truncate mb-1">{m.title}</div>
-              <div className={`text-lg font-mono-display font-bold ${m.is_locked ? 'text-destructive/70' : m.current_slots >= m.max_slots ? 'text-destructive' : 'text-primary'
+              <div className={`text-lg font-mono-display font-bold ${(m.is_locked || m.current_slots >= 4) ? 'text-destructive/70' : 'text-primary'
                 }`}>
-                {m.is_locked ? 'LOCKED' : `${m.current_slots}/${m.max_slots}`}
+                {(m.is_locked || m.current_slots >= 4) ? 'LOCKED' : `${m.current_slots}/${m.max_slots}`}
               </div>
 
               <button
@@ -354,7 +354,7 @@ const AdminDashboard: React.FC = () => {
                         className="font-mono-display text-xs h-7 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20"
                       >
                         <Trash2 className="w-3 h-3 mr-1" />
-                        {eliminating === team.id ? 'ELIMINATING...' : 'ELIMINATE'}
+                        {eliminating === team.id ? 'TERMINATING...' : 'TERMINATE'}
                       </Button>
                     )}
                   </td>

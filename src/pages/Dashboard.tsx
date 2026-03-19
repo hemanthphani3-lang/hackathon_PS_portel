@@ -14,7 +14,6 @@ interface Mission {
   description: string | null;
   max_slots: number;
   current_slots: number;
-  category: string | null;
   is_pushed: boolean | null;
   is_locked: boolean | null;
 }
@@ -65,7 +64,7 @@ const Dashboard: React.FC = () => {
 
     // Fetch missions
     const fetchMissions = async () => {
-      const { data } = await supabase.from('problem_statements').select('id, title, description, max_slots, current_slots, category, is_pushed, is_locked').order('created_at');
+      const { data } = await supabase.from('problem_statements').select('id, title, description, max_slots, current_slots, is_pushed, is_locked').order('created_at');
       if (data) {
         setMissions(data);
       }
@@ -96,7 +95,7 @@ const Dashboard: React.FC = () => {
           setIsEliminated(!!newData.is_eliminated);
 
           if (newData.is_eliminated) {
-            toast.error('ACCESS DENIED: TEAM ELIMINATED', { duration: 10000 });
+            toast.error('ACCESS DENIED: NODE TERMINATED', { duration: 10000 });
           } else if (!newData.selected_mission_id) {
             toast.info('Your mission selection has been reset by an admin.');
             addActivity('Mission reset by administrator');
@@ -154,7 +153,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             <h1 className="text-7xl md:text-9xl font-mono-display font-bold text-destructive tracking-[0.2em] mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
-              ELIMINATED
+              TERMINATED
             </h1>
 
             <div className="w-full max-w-2xl h-1 bg-destructive/30 mb-8 overflow-hidden relative">
@@ -270,10 +269,9 @@ const Dashboard: React.FC = () => {
                   description={mission.description ?? undefined}
                   currentSlots={mission.current_slots}
                   maxSlots={mission.max_slots}
-                  category={mission.category ?? undefined}
                   isSelected={selectedMission === mission.id}
                   teamHasMission={selectedMission !== null}
-                  isLocked={mission.is_locked || false}
+                  isLocked={mission.is_locked || mission.current_slots >= 4}
                   onSelect={handleSelectMission}
                   loading={claiming === mission.id}
                 />

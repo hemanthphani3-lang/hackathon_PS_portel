@@ -16,7 +16,6 @@ export type Database = {
     Tables: {
       problem_statements: {
         Row: {
-          category: string | null
           created_at: string
           current_slots: number
           description: string | null
@@ -28,7 +27,6 @@ export type Database = {
           is_locked: boolean | null
         }
         Insert: {
-          category?: string | null
           created_at?: string
           current_slots?: number
           description?: string | null
@@ -40,7 +38,6 @@ export type Database = {
           is_locked?: boolean | null
         }
         Update: {
-          category?: string | null
           created_at?: string
           current_slots?: number
           description?: string | null

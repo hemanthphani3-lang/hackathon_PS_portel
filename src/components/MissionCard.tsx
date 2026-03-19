@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, Crosshair, Info } from 'lucide-react';
+import { Lock, Crosshair, Info, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,7 +16,6 @@ interface MissionCardProps {
   description?: string;
   currentSlots: number;
   maxSlots: number;
-  category?: string;
   isSelected: boolean;
   teamHasMission: boolean;
   isLocked?: boolean;
@@ -32,7 +31,6 @@ const MissionCard: React.FC<MissionCardProps> = ({
   description,
   currentSlots,
   maxSlots,
-  category,
   isSelected,
   teamHasMission,
   isLocked = false,
@@ -53,12 +51,6 @@ const MissionCard: React.FC<MissionCardProps> = ({
             } ${isSelected ? 'border-secondary cyber-glow ring-1 ring-secondary/50' : ''} ${(teamHasMission && !isSelected) || (isLocked && !isSelected) ? 'opacity-40' : ''
             }`}
         >
-          {/* Category tag */}
-          {category && (
-            <div className="text-xs font-mono-display text-muted-foreground mb-2 tracking-wider">
-              {category}
-            </div>
-          )}
 
           {/* Title */}
           <h3 className="font-mono-display text-base text-foreground mb-4 leading-tight group-hover:text-primary transition-colors flex items-center justify-between">
@@ -86,9 +78,9 @@ const MissionCard: React.FC<MissionCardProps> = ({
 
           {/* Action */}
           {isSelected ? (
-            <div className="flex items-center gap-2 text-sm font-mono-display text-secondary">
-              <Lock className="w-4 h-4" />
-              MISSION LOCKED IN
+            <div className="flex items-center gap-2 text-sm font-mono-display text-secondary uppercase tracking-widest">
+              <Shield className="w-4 h-4" />
+              OPERATION SECURED
             </div>
           ) : (
             <Button
@@ -101,7 +93,7 @@ const MissionCard: React.FC<MissionCardProps> = ({
               size="sm"
             >
               {loading ? (
-                '[ CLAIMING... ]'
+                '[ INITIATING... ]'
               ) : isLocked ? (
                 <>
                   <Lock className="w-3 h-3 mr-1" /> [ FROZEN ]
@@ -112,7 +104,7 @@ const MissionCard: React.FC<MissionCardProps> = ({
                 </>
               ) : (
                 <>
-                  <Crosshair className="w-3 h-3 mr-1" /> SELECT MISSION
+                  <Crosshair className="w-3 h-3 mr-1" /> INITIATE OPERATION
                 </>
               )}
             </Button>
