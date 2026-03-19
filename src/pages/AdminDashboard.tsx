@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, RotateCcw, Shield, Users, Target } from 'lucide-react';
+import { LogOut, RotateCcw, Shield, Users, Target, UserX, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -27,6 +27,7 @@ const AdminDashboard: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [missions, setMissions] = useState<Mission[]>([]);
   const [resetting, setResetting] = useState<string | null>(null);
+  const [eliminating, setEliminating] = useState<string | null>(null);
 
   useEffect(() => {
     if (!session?.isAdmin) {
@@ -68,6 +69,22 @@ const AdminDashboard: React.FC = () => {
       toast.error(result?.message || 'Reset failed');
     } else {
       toast.success('Team mission reset');
+    }
+  };
+
+  const handleEliminate = async (teamId: string, teamName: string) => {
+    if (!window.confirm(`CRITICAL: Are you sure you want to ELIMINATE "${teamName}"? This action is irreversible.`)) {
+      return;
+    }
+
+    setEliminating(teamId);
+    const { error } = await supabase.from('teams').delete().eq('id', teamId);
+    setEliminating(null);
+
+    if (error) {
+      toast.error('Elimination failed: ' + error.message);
+    } else {
+      toast.success(`${teamName} has been ELIMINATED`);
     }
   };
 
@@ -165,19 +182,29 @@ const AdminDashboard: React.FC = () => {
                       <span className="text-xs font-mono-display text-muted-foreground">PENDING</span>
                     )}
                   </td>
-                  <td className="py-2 px-3 text-right">
+                  <td className="py-2 px-3 text-right flex items-center justify-end gap-2">
                     {team.selected_mission_id && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleReset(team.id)}
-                        disabled={resetting === team.id}
-                        className="font-mono-display text-xs h-7"
+                        disabled={resetting === team.id || eliminating === team.id}
+                        className="font-mono-display text-xs h-7 border-primary/20"
                       >
                         <RotateCcw className="w-3 h-3 mr-1" />
                         {resetting === team.id ? 'RESETTING...' : 'RESET'}
                       </Button>
                     )}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleEliminate(team.id, team.team_name)}
+                      disabled={eliminating === team.id || resetting === team.id}
+                      className="font-mono-display text-xs h-7 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      {eliminating === team.id ? 'ELIMINATING...' : 'ELIMINATE'}
+                    </Button>
                   </td>
                 </tr>
               ))}
