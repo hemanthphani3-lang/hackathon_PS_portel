@@ -12,6 +12,7 @@ interface Team {
   selected_mission_id: string | null;
   updated_at: string;
   created_at: string;
+  is_eliminated: boolean | null;
 }
 
 interface Mission {
@@ -37,7 +38,7 @@ const AdminDashboard: React.FC = () => {
 
     const fetchData = async () => {
       const [teamsRes, missionsRes] = await Promise.all([
-        supabase.from('teams').select('id, team_name, selected_mission_id, updated_at, created_at').order('team_name'),
+        supabase.from('teams').select('id, team_name, selected_mission_id, updated_at, created_at, is_eliminated').order('team_name'),
         supabase.from('problem_statements').select('id, title, current_slots, max_slots').order('created_at'),
       ]);
       if (teamsRes.data) {
@@ -61,14 +62,32 @@ const AdminDashboard: React.FC = () => {
 
   const handleReset = async (teamId: string) => {
     setResetting(teamId);
-    const { data, error } = await supabase.rpc('reset_team_mission', { p_team_id: teamId });
+
+    // 1. Reset elimination status
+    const { error: elimError } = await supabase
+      .from('teams')
+      .update({ is_eliminated: false })
+      .eq('id', teamId);
+
+    if (elimError) {
+      toast.error('Failed to reset elimination status');
+      setResetting(null);
+      return;
+    }
+
+    // 2. Reset mission (call RPC)
+    const { data, error: rpcError } = await supabase.rpc('reset_team_mission', { p_team_id: teamId });
     setResetting(null);
 
     const result = data as { success?: boolean; message?: string };
-    if (error || !result?.success) {
+
+    // We ignore the "no mission" error if success is false but message indicates no mission
+    if (rpcError) {
+      toast.error(rpcError.message || 'Mission reset failed');
+    } else if (!result?.success && result?.message !== 'Team has no mission to reset') {
       toast.error(result?.message || 'Reset failed');
     } else {
-      toast.success('Team mission reset');
+      toast.success('Team status reset');
     }
   };
 
@@ -78,7 +97,10 @@ const AdminDashboard: React.FC = () => {
     }
 
     setEliminating(teamId);
-    const { error } = await supabase.from('teams').delete().eq('id', teamId);
+    const { error } = await supabase
+      .from('teams')
+      .update({ is_eliminated: true })
+      .eq('id', teamId);
     setEliminating(null);
 
     if (error) {
@@ -137,15 +159,13 @@ const AdminDashboard: React.FC = () => {
         <h2 className="font-mono-display text-sm text-primary tracking-wider mb-4">MISSION STATUS</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {missions.map(m => (
-            <div key={m.id} className={`p-3 rounded border text-center ${
-              m.current_slots >= m.max_slots
-                ? 'border-destructive/30 bg-destructive/5'
-                : 'border-primary/20 bg-primary/5'
-            }`}>
-              <div className="text-xs font-mono-display text-muted-foreground truncate mb-1">{m.title}</div>
-              <div className={`text-lg font-mono-display font-bold ${
-                m.current_slots >= m.max_slots ? 'text-destructive' : 'text-primary'
+            <div key={m.id} className={`p-3 rounded border text-center ${m.current_slots >= m.max_slots
+              ? 'border-destructive/30 bg-destructive/5'
+              : 'border-primary/20 bg-primary/5'
               }`}>
+              <div className="text-xs font-mono-display text-muted-foreground truncate mb-1">{m.title}</div>
+              <div className={`text-lg font-mono-display font-bold ${m.current_slots >= m.max_slots ? 'text-destructive' : 'text-primary'
+                }`}>
                 {m.current_slots}/{m.max_slots}
               </div>
             </div>
@@ -171,19 +191,23 @@ const AdminDashboard: React.FC = () => {
               {teams.map((team, i) => (
                 <tr key={team.id} className="border-b border-muted/20 hover:bg-muted/20">
                   <td className="py-2 px-3 font-mono-display text-xs text-muted-foreground">{i + 1}</td>
-                  <td className="py-2 px-3 font-mono-display text-sm">{team.team_name}</td>
+                  <td className={`py-2 px-3 font-mono-display text-sm ${team.is_eliminated ? 'text-destructive/50 line-through' : ''}`}>
+                    {team.team_name}
+                  </td>
                   <td className="py-2 px-3 font-mono-display text-xs text-muted-foreground">
                     {getMissionTitle(team.selected_mission_id)}
                   </td>
                   <td className="py-2 px-3">
-                    {team.selected_mission_id ? (
+                    {team.is_eliminated ? (
+                      <span className="text-xs font-mono-display text-destructive animate-pulse">ELIMINATED</span>
+                    ) : team.selected_mission_id ? (
                       <span className="text-xs font-mono-display text-secondary">CLAIMED</span>
                     ) : (
                       <span className="text-xs font-mono-display text-muted-foreground">PENDING</span>
                     )}
                   </td>
                   <td className="py-2 px-3 text-right flex items-center justify-end gap-2">
-                    {team.selected_mission_id && (
+                    {(team.selected_mission_id || team.is_eliminated) && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -195,16 +219,18 @@ const AdminDashboard: React.FC = () => {
                         {resetting === team.id ? 'RESETTING...' : 'RESET'}
                       </Button>
                     )}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleEliminate(team.id, team.team_name)}
-                      disabled={eliminating === team.id || resetting === team.id}
-                      className="font-mono-display text-xs h-7 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20"
-                    >
-                      <Trash2 className="w-3 h-3 mr-1" />
-                      {eliminating === team.id ? 'ELIMINATING...' : 'ELIMINATE'}
-                    </Button>
+                    {!team.is_eliminated && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleEliminate(team.id, team.team_name)}
+                        disabled={eliminating === team.id || resetting === team.id}
+                        className="font-mono-display text-xs h-7 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        {eliminating === team.id ? 'ELIMINATING...' : 'ELIMINATE'}
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
