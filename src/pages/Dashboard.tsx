@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import EventLogSidebar from '@/components/EventLogSidebar';
 import MissionCard from '@/components/MissionCard';
-import { Radio, AlertTriangle } from 'lucide-react';
+import { Radio, AlertTriangle, Shield, LogOut, Timer, ChevronRight, Lock, Info, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -15,6 +15,8 @@ interface Mission {
   max_slots: number;
   current_slots: number;
   category: string | null;
+  is_pushed: boolean | null;
+  is_locked: boolean | null;
 }
 
 const TypewriterBriefing: React.FC<{ text: string }> = ({ text }) => {
@@ -63,8 +65,10 @@ const Dashboard: React.FC = () => {
 
     // Fetch missions
     const fetchMissions = async () => {
-      const { data } = await supabase.from('problem_statements').select('*').order('created_at');
-      if (data) setMissions(data);
+      const { data } = await supabase.from('problem_statements').select('id, title, description, max_slots, current_slots, category, is_pushed, is_locked').order('created_at');
+      if (data) {
+        setMissions(data);
+      }
     };
 
     // Check current team selection — always sync, even if null (admin may have reset)
@@ -80,8 +84,8 @@ const Dashboard: React.FC = () => {
     // Realtime subscription for missions
     const channel = supabase
       .channel('mission-updates')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'problem_statements' }, (payload) => {
-        setMissions(prev => prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new } as Mission : m));
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'problem_statements' }, () => {
+        fetchMissions();
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'teams' }, (payload) => {
         const newData = payload.new as { id: string; selected_mission_id: string | null; team_name: string; is_eliminated: boolean | null };
@@ -237,7 +241,6 @@ const Dashboard: React.FC = () => {
           </div>
         ) : (
           <>
-            {/* Mission Grid Header (Only shown when grid is active) */}
             <div className="flex items-center justify-between mb-8">
               <div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono-display mb-1">
@@ -248,11 +251,18 @@ const Dashboard: React.FC = () => {
                   {session?.teamName?.toUpperCase()}'S DASHBOARD
                 </h1>
               </div>
+
+              {missions.some(m => m.is_pushed && m.is_locked) && (
+                <div className="flex items-center gap-3 px-4 py-2 rounded border border-destructive/30 bg-destructive/10 animate-pulse">
+                  <Pause className="w-4 h-4 text-destructive" />
+                  <span className="text-xs font-mono-display text-destructive tracking-[0.2em] font-bold">DATA STREAM PAUSED BY COMMAND</span>
+                </div>
+              )}
             </div>
 
             {/* Mission Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {missions.map(mission => (
+              {missions.filter(m => m.is_pushed === true).map(mission => (
                 <MissionCard
                   key={mission.id}
                   id={mission.id}
@@ -263,13 +273,14 @@ const Dashboard: React.FC = () => {
                   category={mission.category ?? undefined}
                   isSelected={selectedMission === mission.id}
                   teamHasMission={selectedMission !== null}
+                  isLocked={mission.is_locked || false}
                   onSelect={handleSelectMission}
                   loading={claiming === mission.id}
                 />
               ))}
             </div>
 
-            {missions.length === 0 && (
+            {missions.filter(m => m.is_pushed === true).length === 0 && (
               <div className="text-center text-muted-foreground font-mono-display mt-20">
                 <p className="text-lg">NO MISSIONS LOADED</p>
                 <p className="text-sm mt-2">Waiting for admin to deploy problem statements...</p>
@@ -277,6 +288,7 @@ const Dashboard: React.FC = () => {
             )}
           </>
         )}
+
       </div>
     </div>
   );

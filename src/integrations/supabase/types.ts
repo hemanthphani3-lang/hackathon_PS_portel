@@ -24,6 +24,8 @@ export type Database = {
           id: string
           max_slots: number
           title: string
+          is_pushed: boolean | null
+          is_locked: boolean | null
         }
         Insert: {
           category?: string | null
@@ -34,6 +36,8 @@ export type Database = {
           id?: string
           max_slots?: number
           title: string
+          is_pushed?: boolean | null
+          is_locked?: boolean | null
         }
         Update: {
           category?: string | null
@@ -44,6 +48,8 @@ export type Database = {
           id?: string
           max_slots?: number
           title?: string
+          is_pushed?: boolean | null
+          is_locked?: boolean | null
         }
         Relationships: []
       }

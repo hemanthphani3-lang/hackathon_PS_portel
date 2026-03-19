@@ -19,6 +19,7 @@ interface MissionCardProps {
   category?: string;
   isSelected: boolean;
   teamHasMission: boolean;
+  isLocked?: boolean;
   onSelect: (id: string) => void;
   loading?: boolean;
 }
@@ -34,6 +35,7 @@ const MissionCard: React.FC<MissionCardProps> = ({
   category,
   isSelected,
   teamHasMission,
+  isLocked = false,
   onSelect,
   loading,
 }) => {
@@ -47,11 +49,9 @@ const MissionCard: React.FC<MissionCardProps> = ({
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <div
-          className={`glass-card rounded p-5 relative transition-all duration-150 cursor-pointer hover:border-primary/40 group ${
-            isFull ? 'locked-overlay' : ''
-          } ${isSelected ? 'border-secondary cyber-glow ring-1 ring-secondary/50' : ''} ${
-            teamHasMission && !isSelected ? 'opacity-40' : ''
-          }`}
+          className={`glass-card rounded p-5 relative transition-all duration-150 cursor-pointer hover:border-primary/40 group ${isFull || isLocked ? 'locked-overlay' : ''
+            } ${isSelected ? 'border-secondary cyber-glow ring-1 ring-secondary/50' : ''} ${(teamHasMission && !isSelected) || (isLocked && !isSelected) ? 'opacity-40' : ''
+            }`}
         >
           {/* Category tag */}
           {category && (
@@ -77,9 +77,8 @@ const MissionCard: React.FC<MissionCardProps> = ({
             {/* Progress bar */}
             <div className="h-1.5 bg-muted rounded-sm overflow-hidden">
               <div
-                className={`h-full transition-all duration-300 rounded-sm ${
-                  isFull ? 'bg-destructive' : 'bg-primary'
-                }`}
+                className={`h-full transition-all duration-300 rounded-sm ${isFull ? 'bg-destructive' : 'bg-primary'
+                  }`}
                 style={{ width: `${slotPercent}%` }}
               />
             </div>
@@ -95,14 +94,18 @@ const MissionCard: React.FC<MissionCardProps> = ({
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect(id);
+                if (!isLocked) onSelect(id);
               }}
-              disabled={isDisabled}
-              className="w-full font-mono-display tracking-wider text-xs pointer-events-auto"
+              disabled={isDisabled || isLocked}
+              className={`w-full font-mono-display tracking-wider text-xs pointer-events-auto ${isLocked ? 'border-destructive/30 text-destructive/70 bg-destructive/5' : ''}`}
               size="sm"
             >
               {loading ? (
                 '[ CLAIMING... ]'
+              ) : isLocked ? (
+                <>
+                  <Lock className="w-3 h-3 mr-1" /> [ FROZEN ]
+                </>
               ) : isFull ? (
                 <>
                   <Lock className="w-3 h-3 mr-1" /> FULL
@@ -116,8 +119,8 @@ const MissionCard: React.FC<MissionCardProps> = ({
           )}
         </div>
       </DialogTrigger>
-      
-      <DialogContent 
+
+      <DialogContent
         className="sm:max-w-2xl glass-card border-primary/20 backdrop-blur-xl cursor-pointer p-8"
         onClick={() => setIsDialogOpen(false)}
       >

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { LogOut, RotateCcw, Shield, Users, Target, UserX, Trash2 } from 'lucide-react';
+import { LogOut, RotateCcw, Shield, Users, Target, UserX, Trash2, Upload, CheckCircle2, Pause, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -20,6 +20,8 @@ interface Mission {
   title: string;
   current_slots: number;
   max_slots: number;
+  is_pushed: boolean | null;
+  is_locked: boolean | null;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -30,24 +32,26 @@ const AdminDashboard: React.FC = () => {
   const [resetting, setResetting] = useState<string | null>(null);
   const [eliminating, setEliminating] = useState<string | null>(null);
 
+  const fetchData = async () => {
+    const [teamsRes, missionsRes] = await Promise.all([
+      supabase.from('teams').select('id, team_name, selected_mission_id, updated_at, created_at, is_eliminated').order('team_name'),
+      supabase.from('problem_statements').select('id, title, current_slots, max_slots, is_pushed, is_locked').order('created_at'),
+    ]);
+    if (teamsRes.data) {
+      // Only show teams that have logged in at least once or claimed a mission
+      // In our case, every login updates 'updated_at'
+      setTeams(teamsRes.data.filter(t => t.selected_mission_id !== null || t.updated_at !== t.created_at));
+    }
+    if (missionsRes.data) setMissions(missionsRes.data);
+  };
+
   useEffect(() => {
     if (!session?.isAdmin) {
       navigate('/');
       return;
     }
 
-    const fetchData = async () => {
-      const [teamsRes, missionsRes] = await Promise.all([
-        supabase.from('teams').select('id, team_name, selected_mission_id, updated_at, created_at, is_eliminated').order('team_name'),
-        supabase.from('problem_statements').select('id, title, current_slots, max_slots').order('created_at'),
-      ]);
-      if (teamsRes.data) {
-        // Only show teams that have logged in at least once or claimed a mission
-        // In our case, every login updates 'updated_at'
-        setTeams(teamsRes.data.filter(t => t.selected_mission_id !== null || t.updated_at !== t.created_at));
-      }
-      if (missionsRes.data) setMissions(missionsRes.data);
-    };
+    fetchData();
 
     fetchData();
 
@@ -110,7 +114,78 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handlePush = async (missionId: string, currentPushed: boolean) => {
+    const { error } = await supabase
+      .from('problem_statements')
+      .update({ is_pushed: !currentPushed })
+      .eq('id', missionId);
 
+    if (error) {
+      toast.error('Failed to update mission status');
+    } else {
+      toast.success(currentPushed ? 'Mission data hidden from teams' : 'Mission data initialized and broadcasted');
+    }
+  };
+
+  const handlePushAll = async () => {
+    if (!window.confirm('CRITICAL: Initialize all mission nodes and broadcast data to teams?')) return;
+
+    const { error } = await supabase
+      .from('problem_statements')
+      .update({ is_pushed: true })
+      .not('id', 'is', null);
+
+    if (error) {
+      toast.error('Failed to initialize mission data');
+    } else {
+      toast.success('All mission data initialized and broadcasted');
+    }
+  };
+
+
+  const handleToggleLock = async (pushedMissions: Mission[]) => {
+    const anyLocked = pushedMissions.some(m => m.is_locked);
+    const newState = !anyLocked;
+
+    if (newState && !window.confirm('CRITICAL: Pause all mission selection nodes? Teams will not be able to claim new missions.')) return;
+    if (!newState && !window.confirm('Resume mission selection nodes?')) return;
+
+    const { error } = await supabase
+      .from('problem_statements')
+      .update({ is_locked: newState })
+      .eq('is_pushed', true);
+
+    if (error) {
+      toast.error('Failed to update lock status');
+    } else {
+      toast.success(newState ? 'Missions FROZEN' : 'Missions RESUMED');
+    }
+  };
+
+  const handleResetMissions = async () => {
+    if (!window.confirm('WARNING: This will RESET ALL MISSIONS, CLEAR ALL CLAIMED CODES, and HIDE all nodes from teams. Continue?')) return;
+
+    // 1. Reset all missions
+    const { error: missionError } = await supabase
+      .from('problem_statements')
+      .update({ is_pushed: false, is_locked: false, current_slots: 0 })
+      .not('id', 'is', null);
+
+    // 2. Clear all team claims
+    const { error: teamError } = await supabase
+      .from('teams')
+      .update({ selected_mission_id: null })
+      .not('id', 'is', null);
+
+    if (missionError || teamError) {
+      console.error('Reset error:', { missionError, teamError });
+      toast.error('Failed to fully reset mission system');
+    } else {
+      toast.success('MISSION SYSTEM RESET TO BEGINNING STATE');
+      // Small delay to allow Postgres triggers (if any) to settle
+      setTimeout(() => fetchData(), 500);
+    }
+  };
 
   const getMissionTitle = (missionId: string | null) => {
     if (!missionId) return '—';
@@ -156,18 +231,69 @@ const AdminDashboard: React.FC = () => {
 
       {/* Mission Status */}
       <div className="glass-card p-5 mb-8">
-        <h2 className="font-mono-display text-sm text-primary tracking-wider mb-4">MISSION STATUS</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-mono-display text-sm text-primary tracking-wider">MISSION STATUS</h2>
+          <div className="flex gap-2">
+            {missions.some(m => !m.is_pushed) ? (
+              <Button
+                variant="outline"
+                onClick={handlePushAll}
+                className="font-mono-display text-xs px-6 py-4 h-auto border-primary/50 text-primary hover:bg-primary hover:text-black transition-all duration-300 shadow-[0_0_15px_rgba(var(--primary),0.1)] hover:shadow-[0_0_25px_rgba(var(--primary),0.3)] uppercase tracking-[0.2em]"
+              >
+                INITIALIZE MISSION DATA
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => handleToggleLock(missions.filter(m => m.is_pushed))}
+                className={`font-mono-display text-xs px-6 py-4 h-auto transition-all duration-300 uppercase tracking-[0.2em] ${missions.some(m => m.is_pushed && m.is_locked)
+                  ? 'border-secondary/50 text-secondary hover:bg-secondary hover:text-black shadow-[0_0_15px_rgba(var(--secondary),0.1)]'
+                  : 'border-destructive/50 text-destructive hover:bg-destructive hover:text-black shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                  }`}
+              >
+                {missions.some(m => m.is_pushed && m.is_locked) ? (
+                  <><Play className="w-3 h-3 mr-2" /> RESUME MISSION DATA</>
+                ) : (
+                  <><Pause className="w-3 h-3 mr-2" /> PAUSE MISSION DATA</>
+                )}
+              </Button>
+            )}
+
+            {missions.some(m => m.is_pushed) && (
+              <Button
+                variant="outline"
+                onClick={handleResetMissions}
+                className="font-mono-display text-xs px-6 py-4 h-auto border-destructive/30 text-destructive/70 hover:bg-destructive hover:text-black transition-all duration-300 uppercase tracking-[0.2em]"
+              >
+                RESET MISSION DATA
+              </Button>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {missions.map(m => (
-            <div key={m.id} className={`p-3 rounded border text-center ${m.current_slots >= m.max_slots
-              ? 'border-destructive/30 bg-destructive/5'
-              : 'border-primary/20 bg-primary/5'
+            <div key={m.id} className={`p-4 rounded-lg border text-center relative group transition-all duration-300 ${m.is_pushed
+              ? m.is_locked
+                ? 'border-destructive/30 bg-destructive/5 opacity-80'
+                : 'border-primary/40 bg-primary/5 shadow-[0_0_15px_rgba(var(--primary),0.05)]'
+              : 'border-primary/10 bg-transparent opacity-40'
               }`}>
               <div className="text-xs font-mono-display text-muted-foreground truncate mb-1">{m.title}</div>
-              <div className={`text-lg font-mono-display font-bold ${m.current_slots >= m.max_slots ? 'text-destructive' : 'text-primary'
+              <div className={`text-lg font-mono-display font-bold ${m.is_locked ? 'text-destructive/70' : m.current_slots >= m.max_slots ? 'text-destructive' : 'text-primary'
                 }`}>
-                {m.current_slots}/{m.max_slots}
+                {m.is_locked ? 'LOCKED' : `${m.current_slots}/${m.max_slots}`}
               </div>
+
+              <button
+                onClick={() => handlePush(m.id, !!m.is_pushed)}
+                className={`absolute -top-2 -right-2 w-6 h-6 rounded-full border shadow-2xl transition-all flex items-center justify-center ${m.is_pushed
+                  ? 'bg-primary border-primary text-black scale-110 shadow-[0_0_12px_rgba(var(--primary),0.4)]'
+                  : 'bg-background border-primary/20 text-muted-foreground hover:scale-110'
+                  }`}
+                title={m.is_pushed ? "Deactivate Mission" : "Activate Mission"}
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${m.is_pushed ? 'bg-black' : 'bg-primary/40'}`} />
+              </button>
             </div>
           ))}
         </div>
