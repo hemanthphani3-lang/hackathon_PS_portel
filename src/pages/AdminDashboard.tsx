@@ -34,7 +34,9 @@ const AdminDashboard: React.FC = () => {
 
   const fetchData = async () => {
     const [teamsRes, missionsRes] = await Promise.all([
-      supabase.from('teams').select('id, team_name, selected_mission_id, updated_at, created_at, is_eliminated').order('team_name'),
+      supabase.from('teams').select('id, team_name, selected_mission_id, updated_at, created_at, is_eliminated')
+        .order('is_eliminated', { ascending: true })
+        .order('team_name', { ascending: true }),
       supabase.from('problem_statements').select('id, title, current_slots, max_slots, is_pushed, is_locked').order('created_at'),
     ]);
     if (teamsRes.data) {
