@@ -260,12 +260,21 @@ const Dashboard: React.FC = () => {
                 </h1>
               </div>
 
-              {missions.some(m => m.is_pushed && m.is_locked) && (
-                <div className="flex items-center gap-3 px-4 py-2 rounded border border-destructive/30 bg-destructive/10 animate-pulse">
-                  <Pause className="w-4 h-4 text-destructive" />
-                  <span className="text-xs font-mono-display text-destructive tracking-[0.2em] font-bold">DATA STREAM PAUSED BY COMMAND</span>
-                </div>
-              )}
+              <div className="flex items-center gap-4">
+                {missions.some(m => m.is_pushed && m.is_locked) && (
+                  <div className="flex items-center gap-3 px-4 py-2 rounded border border-destructive/30 bg-destructive/10 animate-pulse">
+                    <Pause className="w-4 h-4 text-destructive" />
+                    <span className="text-xs font-mono-display text-destructive tracking-[0.2em] font-bold">DATA STREAM PAUSED BY COMMAND</span>
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  onClick={logout}
+                  className="font-mono-display text-[10px] text-primary/60 hover:text-primary hover:bg-primary/10 transition-all border border-primary/10 h-8 px-4"
+                >
+                  <LogOut className="w-3 h-3 mr-2" /> DISCONNECT
+                </Button>
+              </div>
             </div>
 
             {/* Mission Grid */}
