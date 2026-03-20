@@ -95,7 +95,7 @@ const Dashboard: React.FC = () => {
           setIsEliminated(!!newData.is_eliminated);
 
           if (newData.is_eliminated) {
-            toast.error('ACCESS DENIED: NODE TERMINATED', { duration: 10000 });
+            toast.error('ACCESS DENIED: TEAM ELIMINATED', { duration: 10000 });
           } else if (!newData.selected_mission_id) {
             toast.info('Your mission selection has been reset by an admin.');
             addActivity('Mission reset by administrator');
@@ -153,7 +153,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             <h1 className="text-7xl md:text-9xl font-mono-display font-bold text-destructive tracking-[0.2em] mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
-              TERMINATED
+              ELIMINATED
             </h1>
 
             <div className="w-full max-w-2xl h-1 bg-destructive/30 mb-8 overflow-hidden relative">

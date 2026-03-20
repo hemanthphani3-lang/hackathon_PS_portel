@@ -354,7 +354,7 @@ const AdminDashboard: React.FC = () => {
                         className="font-mono-display text-xs h-7 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20"
                       >
                         <Trash2 className="w-3 h-3 mr-1" />
-                        {eliminating === team.id ? 'TERMINATING...' : 'TERMINATE'}
+                        {eliminating === team.id ? 'ELIMINATING...' : 'ELIMINATE'}
                       </Button>
                     )}
                   </td>
