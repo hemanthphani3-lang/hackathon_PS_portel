@@ -203,8 +203,17 @@ const Dashboard: React.FC = () => {
                   <div className="text-xs font-mono-display text-secondary tracking-[0.5em] uppercase animate-pulse">
                     [ OPERATION STATUS: ACTIVE ]
                   </div>
-                  <div className="text-[10px] font-mono-display text-muted-foreground uppercase tracking-widest">
-                    Secure Line — Terminal {session?.teamName}
+                  <div className="flex items-center gap-4">
+                    <div className="text-[10px] font-mono-display text-muted-foreground uppercase tracking-widest hidden md:block">
+                      Secure Line — Terminal {session?.teamName}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      onClick={logout}
+                      className="font-mono-display text-[10px] text-secondary/60 hover:text-secondary hover:bg-secondary/10 transition-all border border-secondary/10 h-7 px-3"
+                    >
+                      <LogOut className="w-3 h-3 mr-1.5" /> DISCONNECT
+                    </Button>
                   </div>
                 </div>
 
