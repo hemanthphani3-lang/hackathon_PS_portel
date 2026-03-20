@@ -31,6 +31,9 @@ const AdminDashboard: React.FC = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [resetting, setResetting] = useState<string | null>(null);
   const [eliminating, setEliminating] = useState<string | null>(null);
+  const [newTeamName, setNewTeamName] = useState('');
+  const [newTeamPassword, setNewTeamPassword] = useState('');
+  const [addingTeam, setAddingTeam] = useState(false);
 
   const fetchData = async () => {
     const [teamsRes, missionsRes] = await Promise.all([
@@ -189,6 +192,33 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleAddTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTeamName.trim() || !newTeamPassword.trim()) {
+      toast.error('Team name and password are required');
+      return;
+    }
+
+    setAddingTeam(true);
+    const { data, error: rpcError } = await supabase.rpc('create_team_node', {
+      p_team_name: newTeamName.trim(),
+      p_password: newTeamPassword.trim()
+    });
+
+    setAddingTeam(false);
+
+    const result = data as { success?: boolean; message?: string };
+
+    if (rpcError || !result?.success) {
+      toast.error('Failed to add team: ' + (result?.message || rpcError?.message || 'Unknown error'));
+    } else {
+      toast.success(`Team "${newTeamName}" added successfully`);
+      setNewTeamName('');
+      setNewTeamPassword('');
+      fetchData();
+    }
+  };
+
   const getMissionTitle = (missionId: string | null) => {
     if (!missionId) return '—';
     return missions.find(m => m.id === missionId)?.title || 'Unknown';
@@ -229,6 +259,44 @@ const AdminDashboard: React.FC = () => {
           </div>
           <div className="text-2xl font-mono-display text-foreground">{unclaimedTeams.length}</div>
         </div>
+      </div>
+
+      {/* Add Team Section */}
+      <div className="glass-card p-5 mb-8 border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.05)]">
+        <h2 className="font-mono-display text-sm text-primary tracking-wider mb-4 flex items-center gap-2">
+          <Users className="w-4 h-4" /> ADD NEW TEAM
+        </h2>
+        <form onSubmit={handleAddTeam} className="flex flex-wrap gap-4 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-[10px] font-mono-display text-muted-foreground mb-1.5 tracking-wider uppercase">Team Name</label>
+            <input
+              type="text"
+              value={newTeamName}
+              onChange={(e) => setNewTeamName(e.target.value)}
+              placeholder="e.g. CyberKnights"
+              className="w-full bg-black/40 border border-primary/30 rounded px-3 py-2 text-sm font-mono-display text-primary placeholder:text-primary/20 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+              required
+            />
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-[10px] font-mono-display text-muted-foreground mb-1.5 tracking-wider uppercase">Access Key (Password)</label>
+            <input
+              type="text"
+              value={newTeamPassword}
+              onChange={(e) => setNewTeamPassword(e.target.value)}
+              placeholder="e.g. 12345"
+              className="w-full bg-black/40 border border-primary/30 rounded px-3 py-2 text-sm font-mono-display text-primary placeholder:text-primary/20 focus:border-primary focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={addingTeam}
+            className="font-mono-display text-xs px-8 py-2.5 h-auto bg-primary text-black hover:bg-primary/80 transition-all shadow-[0_0_15px_rgba(var(--primary),0.2)] hover:shadow-[0_0_25px_rgba(var(--primary),0.4)]"
+          >
+            {addingTeam ? 'PROVISIONING...' : 'ADD TEAM NODE'}
+          </Button>
+        </form>
       </div>
 
       {/* Mission Status */}
