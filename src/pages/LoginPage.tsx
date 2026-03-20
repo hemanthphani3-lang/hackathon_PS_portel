@@ -31,7 +31,9 @@ const LoginPage: React.FC = () => {
     if (result.success) {
       setAuthSuccess(true);
       setTimeout(() => {
-        navigate(result.isAdmin ? '/admin-dashboard' : '/dashboard');
+        if (result.isAdmin) navigate('/admin-dashboard');
+        else if (result.isEditor) navigate('/editor-dashboard');
+        else navigate('/dashboard');
       }, 2400); // 2.4s total cinematic animation
     } else {
       setError(result.message);
@@ -44,11 +46,12 @@ const LoginPage: React.FC = () => {
       <div className="absolute inset-0 z-0 opacity-[0.08]">
         <MatrixRain />
       </div>
-      
+
       {/* Animated Scan Line */}
       <div className="absolute inset-x-0 h-[2px] bg-primary/20 z-0 animate-[scan_8s_linear_infinite]" />
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes scan {
           0% { top: -10%; }
           100% { top: 110%; }
@@ -151,17 +154,17 @@ const LoginPage: React.FC = () => {
           <div className="relative w-full h-[300px] flex flex-col items-center justify-center overflow-hidden rounded-xl border border-[#00FF41]/20 bg-black/80">
             {/* Background Flash at 1.4s */}
             <div className="absolute inset-0 bg-[#00FF41] animate-[flash_2s_ease-out_1.4s_forwards] opacity-0 mix-blend-overlay pointer-events-none z-20" />
-            
+
             <div className="flex flex-col items-center w-full px-8 relative z-10 h-full">
-              
+
               {/* Stage 1: Decryption (opacity fades out after 0.8s) */}
               <div className="absolute inset-0 flex flex-col items-center justify-center animate-[fadeOut_0.1s_ease-in_0.8s_forwards]">
                 <Terminal className="w-12 h-12 text-[#00FF41]/70 animate-pulse mb-4" />
                 <div className="w-full h-24 overflow-hidden relative opacity-50 font-mono-display text-xs text-[#00FF41] blur-[0.5px]">
                   <div className="absolute top-0 w-full animate-[scrollUp_0.5s_linear_infinite] text-center opacity-70">
                     {/* CSS Hack string for scrolling hex effect */}
-                    {Array.from({length: 20}).map((_, i) => (
-                       <div key={i}>{Math.random().toString(16).slice(2, 10).toUpperCase()} - {Math.random().toString(16).slice(2, 10).toUpperCase()}</div>
+                    {Array.from({ length: 20 }).map((_, i) => (
+                      <div key={i}>{Math.random().toString(16).slice(2, 10).toUpperCase()} - {Math.random().toString(16).slice(2, 10).toUpperCase()}</div>
                     ))}
                   </div>
                 </div>
@@ -173,15 +176,15 @@ const LoginPage: React.FC = () => {
                 <Shield className="w-16 h-16 text-[#00FF41] animate-ping mb-4" />
                 <h3 className="font-mono-display text-[#00FF41] tracking-[0.2em] text-sm">OVERRIDING FIREWALL</h3>
                 <div className="w-full h-1 bg-[#00FF41]/20 mt-4 rounded overflow-hidden">
-                  <div className="h-full bg-[#00FF41] animate-[fill-bar_0.6s_ease-out_0.8s_forwards]" style={{width: '0%'}}></div>
+                  <div className="h-full bg-[#00FF41] animate-[fill-bar_0.6s_ease-out_0.8s_forwards]" style={{ width: '0%' }}></div>
                 </div>
               </div>
 
               {/* Stage 3: Access Granted (slams in at 1.4s) */}
               <div className="absolute inset-0 flex flex-col items-center justify-center animate-[slamIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)_1.4s_forwards] opacity-0 scale-150">
                 <div className="relative">
-                   <Unlock className="w-20 h-20 text-[#00FF41] drop-shadow-[0_0_15px_rgba(0,255,65,1)] mb-6" />
-                   <div className="absolute inset-0 border-4 border-[#00FF41] rounded-full animate-ping opacity-0 [animation-delay:1.4s]" />
+                  <Unlock className="w-20 h-20 text-[#00FF41] drop-shadow-[0_0_15px_rgba(0,255,65,1)] mb-6" />
+                  <div className="absolute inset-0 border-4 border-[#00FF41] rounded-full animate-ping opacity-0 [animation-delay:1.4s]" />
                 </div>
                 <h2 className="text-3xl font-mono-display text-[#00FF41] tracking-[0.3em] drop-shadow-[0_0_10px_rgba(0,255,65,0.8)] text-center font-bold">
                   ACCESS

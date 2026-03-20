@@ -106,6 +106,10 @@ export type Database = {
         Args: { p_password: string; p_team_name: string }
         Returns: Json
       }
+      create_mission_node: {
+        Args: { p_description: string; p_title: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
